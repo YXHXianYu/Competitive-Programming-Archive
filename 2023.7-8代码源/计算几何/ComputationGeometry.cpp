@@ -249,6 +249,57 @@ db convexDiameter(vector<P>& ps) {
     return ret;
 }
 
+// 半平面交
+db halfPlane(vector<pair<P, P>>& a) {
+    int n = a.size() - 1;
+    auto compare = [](pair<P, P>& a, pair<P, P>& b) {
+        P va = a.second - a.first;
+        P vb = b.second - b.first;
+        int qa = va.quad();
+        int qb = vb.quad();
+        if(qa != qb) return qa < qb;
+        int v = sign(va.det(vb));
+        return v == -1;
+    };
+    sort(a.begin() + 1, a.begin() + n + 1, [](pair<P, P>& a, pair<P, P>& b) {
+        P va = a.second - a.first;
+        P vb = b.second - b.first;
+        int qa = va.quad();
+        int qb = vb.quad();
+        if(qa != qb) return qa < qb;
+        int v = sign(va.det(vb));
+        if(v != 0) return v == -1;
+        return crossOp(a.first, a.second, b.second) < 0;
+    });
+    auto right = [](pair<P,P>& a, pair<P,P>& b, pair<P,P>& c) {
+        P p = getLL(b.first, b.second, c.first, c.second);
+        return crossOp(a.first, a.second, p) <= 0;
+    };
+    vector<pair<P, P>> q(n + 1);
+    int h = 1, t = 1;
+    q[1] = a[1];
+    for(int i = 2; i <= n; i++) {
+        if(compare(a[i], a[i-1])) continue;
+        while(h < t && right(a[i], q[t], q[t-1])) t--;
+        while(h < t && right(a[i], q[h], q[h+1])) h++;
+        q[++t] = a[i];
+    }
+    while(h < t && right(q[h], q[t], q[t-1])) t--;
+
+    if(h == t) return 0.0;
+
+    vector<P> ans(1);
+    for(int i = h, j = 1; i < t; i++, j++) {
+        ans.push_back(getLL(q[i].first, q[i].second, q[i+1].first, q[i+1].second));
+        P cp = getLL(q[i].first, q[i].second, q[i+1].first, q[i+1].second);
+    }
+    ans.push_back(getLL(q[t].first, q[t].second, q[h].first, q[h].second));
+
+    return fabs(area(ans));
+    // return ans;
+}
+
+
 /* 圆 */
 
 // 判断两个圆之间的关系
